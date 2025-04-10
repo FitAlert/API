@@ -48,6 +48,9 @@ const serial = async (
         console.log(`A leitura do arduino foi iniciada na porta ${portaArduino.path} utilizando Baud Rate de ${SERIAL_BAUD_RATE}`);
     });
 
+    let inserido = false;
+    let idRegistroAtual = null;
+
     // processa os dados recebidos do Arduino
     arduino.pipe(new serialport.ReadlineParser({ delimiter: '\r\n' })).on('data', async (data) => {
         console.log(data);
@@ -60,14 +63,28 @@ const serial = async (
         valoresSensorDigital.push(sensorDigital);
 
         // insere os dados no banco de dados (se habilitado)
-        if (HABILITAR_OPERACAO_INSERIR) {
+        if (sensorDigital===1 && inserido===false) {
 
             // este insert irá inserir os dados na tabela "medida"
             await poolBancoDados.execute(
-                'INSERT INTO registro (registro) VALUES (?)',
-                [sensorDigital]
+                'INSERT INTO registro (registro, entrada, saida) VALUES (?, NOW(), ?)',
+                [sensorDigital, null]
             );
-            console.log("valores inseridos no banco: " + sensorDigital);
+            inserido = true;
+            idRegistroAtual = result.insertId;
+            console.log("Entrada registrada.");
+
+        }
+
+        if(sensorDigital === 0 && inserido == true){
+            // este update irá atualizar a tabela "registro", registrando a saída da pessoa no provador.
+            await poolBancoDados.execute(
+                'UPDATE registro SET saida = (NOW()) WHERE idRegistro = ?',
+                [idRegistroAtual]
+            );
+            inserido = false;
+            idRegistroAtual = null;
+            console.log("Saída registrada");
 
         }
     });
