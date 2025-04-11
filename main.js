@@ -21,10 +21,10 @@ const serial = async (
     let poolBancoDados = mysql.createPool(
         {
             host: '127.0.0.1',
-            user: 'grupo7',
-            password: 'Grupo7',
-            database: 'provadores',
-            port: 3306
+            user: 'aluno',
+            password: 'Sptech#2024',
+            database: 'provador',
+            port: 3307
         }
     ).promise();
 
@@ -67,8 +67,8 @@ const serial = async (
 
             // este insert irá inserir os dados na tabela "medida"
             const [result] = await poolBancoDados.execute(
-                'INSERT INTO registro (registro, entrada, saida) VALUES (?, NOW(), ?)',
-                [sensorDigital, null]
+                'INSERT INTO registros (fkSensor, registro) VALUES (1, ?)',
+                [sensorDigital]
             );
             inserido = true;
             idRegistroAtual = result.insertId;
@@ -79,7 +79,7 @@ const serial = async (
         if(sensorDigital === 0 && inserido == true){
             // este update irá atualizar a tabela "registro", registrando a saída da pessoa no provador.
             await poolBancoDados.execute(
-                'UPDATE registro SET saida = (NOW()) WHERE idRegistro = ?',
+                'UPDATE registros SET data_saida = (NOW()) WHERE idRegistro = ?',
                 [idRegistroAtual]
             );
             inserido = false;
