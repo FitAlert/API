@@ -37,6 +37,9 @@ API/
 
 > **Pré-requisitos:**  
 > - Arduíno conectado via USB utilizando sensor HC-SR04
+> - Certifique-se de ter o banco de dados do projeto funcionando com as credenciais corretas que chamamos no pullBancoDeDados, no arquivo main.js. O código SQL para criação do banco está disponível no repositório BANCO DE DADOS desta organização
+> - Certifique-se de ter o arduino rodando através da arduíno IDE, o código está disponível no repositório ARDUINO desta organização.
+
 
 1. Clone o repositório:
    ```bash
@@ -47,6 +50,10 @@ API/
 
     ```bash
     npm install
+       npm install serialport
+       npm install express
+       npm install mysql2
+
     
 3. Inicie a aplicação (caso tenha um servidor local configurado):
 
