@@ -23,7 +23,7 @@ const serial = async (
             host: '127.0.0.1',
             user: 'aluno',
             password: 'Sptech#2024',
-            database: 'provador',
+            database: 'DB_FitAlert',
             port: 3307
         }
     ).promise();
@@ -67,7 +67,7 @@ const serial = async (
 
             // este insert irá inserir os dados na tabela "medida"
             const [result] = await poolBancoDados.execute(
-                'INSERT INTO registros (fkSensor, registro) VALUES (1, ?)',
+                'INSERT INTO TB_Registros (fkSensor, ativo) VALUES (1, ?)',
                 [sensorDigital]
             );
             inserido = true;
@@ -79,7 +79,7 @@ const serial = async (
         if(sensorDigital === 0 && inserido == true){
             // este update irá atualizar a tabela "registro", registrando a saída da pessoa no provador.
             await poolBancoDados.execute(
-                'UPDATE registros SET data_saida = (NOW()) WHERE idRegistro = ?',
+                'UPDATE TB_Registros SET data_saida = (NOW()) WHERE idRegistro = ?',
                 [idRegistroAtual]
             );
             inserido = false;
