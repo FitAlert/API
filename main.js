@@ -48,11 +48,18 @@ const serial = async (
         console.log(`A leitura do arduino foi iniciada na porta ${portaArduino.path} utilizando Baud Rate de ${SERIAL_BAUD_RATE}`);
     });
 
-    let inseridoSensor2 = false;
+    function mockarSegundo() {
+        let inseridoSensor2 = false;
     let idRegistroSensor2 = null;
     
     setInterval(async () => {
-        const valorMockado = Math.random() > 0.5 ? 1 : 0;
+        let valorMockado;
+
+        if (Math.random() > 0.5) {
+            valorMockado = 1;
+        } else {
+            valorMockado = 0;
+        }
     
         if (valorMockado === 1 && inseridoSensor2 === false) {
             const [result] = await poolBancoDados.execute(
@@ -73,7 +80,9 @@ const serial = async (
             idRegistroSensor2 = null;
             console.log("Saída mockada registrada pelo segundo sensor.");
         }
-    }, 10000);
+    }, 8000);
+    }
+    
 
     let inserido = false;
     let idRegistroAtual = null;
@@ -112,6 +121,8 @@ const serial = async (
             inserido = false;
             idRegistroAtual = null;
             console.log("Saída registrada");
+
+            mockarSegundo();
 
         }
     });
