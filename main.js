@@ -20,7 +20,7 @@ const serial = async (
     // conexão com o banco de dados MySQL
     let poolBancoDados = mysql.createPool(
         {
-            host: '10.18.33.33',
+            host: '10.18.32.189',
             user: 'aluno',
             password: 'Sptech#2024',
             database: 'DB_FitAlert',
@@ -47,6 +47,33 @@ const serial = async (
     arduino.on('open', () => {
         console.log(`A leitura do arduino foi iniciada na porta ${portaArduino.path} utilizando Baud Rate de ${SERIAL_BAUD_RATE}`);
     });
+
+    let inseridoSensor2 = false;
+    let idRegistroSensor2 = null;
+    
+    setInterval(async () => {
+        const valorMockado = Math.random() > 0.5 ? 1 : 0;
+    
+        if (valorMockado === 1 && inseridoSensor2 === false) {
+            const [result] = await poolBancoDados.execute(
+                'INSERT INTO TB_Registros (fkSensor, ativo) VALUES (2, ?)',
+                [valorMockado]
+            );
+            idRegistroSensor2 = result.insertId;
+            inseridoSensor2 = true;
+            console.log("Entrada mockada registrada pelo segundo sensor.");
+        }
+    
+        if (valorMockado === 0 && inseridoSensor2 === true) {
+            await poolBancoDados.execute(
+                'UPDATE TB_Registros SET data_saida = NOW() WHERE idRegistro = ?',
+                [idRegistroSensor2]
+            );
+            inseridoSensor2 = false;
+            idRegistroSensor2 = null;
+            console.log("Saída mockada registrada pelo segundo sensor.");
+        }
+    }, 10000);
 
     let inserido = false;
     let idRegistroAtual = null;
