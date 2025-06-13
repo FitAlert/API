@@ -46,92 +46,85 @@ const serial = async (
     // evento quando a porta serial é aberta
     arduino.on('open', () => {
         console.log(`A leitura do arduino foi iniciada na porta ${portaArduino.path} utilizando Baud Rate de ${SERIAL_BAUD_RATE}`);
+        mockarSegundo();
     });
 
     function mockarSegundo() {
         let inseridoSensor2 = false;
-    let idRegistroSensor2 = null;
-    
-    setInterval(async () => {
-        let valorMockado;
+        let idRegistroSensor2 = null;
+        let valorMockado = 0;
 
-        if (Math.random() > 0.5) {
-            valorMockado = 1;
-        } else {
-            valorMockado = 0;
-        }
-    
-        if (valorMockado === 1 && inseridoSensor2 === false) {
-            const [result] = await poolBancoDados.execute(
-                'INSERT INTO TB_Registros (fkSensor, ativo) VALUES (2, ?)',
-                [valorMockado]
-            );
-            idRegistroSensor2 = result.insertId;
-            inseridoSensor2 = true;
-            console.log("Entrada mockada registrada pelo segundo sensor.");
-        }
-    
-        if (valorMockado === 0 && inseridoSensor2 === true) {
-            await poolBancoDados.execute(
-                'UPDATE TB_Registros SET data_saida = NOW() WHERE idRegistro = ?',
-                [idRegistroSensor2]
-            );
-            inseridoSensor2 = false;
-            idRegistroSensor2 = null;
-            console.log("Saída mockada registrada pelo segundo sensor.");
-        }
-    }, 8000);
+        setInterval(async () => {
+            if (valorMockado === 0 && inseridoSensor2 === false) {
+                valorMockado = 1;
+                const [result] = await poolBancoDados.execute(
+                    'INSERT INTO TB_Registros (fkSensor, ativo) VALUES (2, ?)',
+                    [valorMockado]
+                );
+                idRegistroSensor2 = result.insertId;
+                inseridoSensor2 = true;
+                console.log("Entrada registrada pelo segundo sensor.");
+            } else if (valorMockado === 1 && inseridoSensor2 === true) {
+                await poolBancoDados.execute(
+                    'UPDATE TB_Registros SET data_saida = NOW() WHERE idRegistro = ?',
+                    [idRegistroSensor2]
+                );
+                inseridoSensor2 = false;
+                idRegistroSensor2 = null;
+                valorMockado = 0;
+                console.log("Saída registrada pelo segundo sensor.");
+            }
+        }, 10000);
+
     }
-    
-
-    let inserido = false;
-    let idRegistroAtual = null;
-
-    // processa os dados recebidos do Arduino
-    arduino.pipe(new serialport.ReadlineParser({ delimiter: '\r\n' })).on('data', async (data) => {
-        console.log(data);
-        const valores = data.split(',');
-        const sensorDigital = parseInt(valores[0]);
-        // const sensorAnalogico = parseFloat(valores[1]);
-
-        // armazena os valores dos sensores nos arrays correspondentes
-        //valoresSensorAnalogico.push(sensorAnalogico);
-        valoresSensorDigital.push(sensorDigital);
-
-        // insere os dados no banco de dados (se habilitado)
-        if (sensorDigital===1 && inserido===false) {
-
-            // este insert irá inserir os dados na tabela "medida"
-            const [result] = await poolBancoDados.execute(
-                'INSERT INTO TB_Registros (fkSensor, ativo) VALUES (1, ?)',
-                [sensorDigital]
-            );
-            inserido = true;
-            idRegistroAtual = result.insertId;
-            console.log("Entrada registrada.");
-
-        }
-
-        if(sensorDigital === 0 && inserido == true){
-            // este update irá atualizar a tabela "registro", registrando a saída da pessoa no provador.
-            await poolBancoDados.execute(
-                'UPDATE TB_Registros SET data_saida = (NOW()) WHERE idRegistro = ?',
-                [idRegistroAtual]
-            );
-            inserido = false;
-            idRegistroAtual = null;
-            console.log("Saída registrada");
-
-            mockarSegundo();
-
-        }
-    });
-
-    // evento para lidar com erros na comunicação serial
-    arduino.on('error', (mensagem) => {
-        console.error(`Erro no arduino (Mensagem: ${mensagem}`)
-    });
 }
+
+
+let inserido = false;
+let idRegistroAtual = null;
+
+// processa os dados recebidos do Arduino
+arduino.pipe(new serialport.ReadlineParser({ delimiter: '\r\n' })).on('data', async (data) => {
+    console.log(data);
+    const valores = data.split(',');
+    const sensorDigital = parseInt(valores[0]);
+    // const sensorAnalogico = parseFloat(valores[1]);
+
+    // armazena os valores dos sensores nos arrays correspondentes
+    //valoresSensorAnalogico.push(sensorAnalogico);
+    valoresSensorDigital.push(sensorDigital);
+
+    // insere os dados no banco de dados (se habilitado)
+    if (sensorDigital === 1 && inserido === false) {
+
+        // este insert irá inserir os dados na tabela "medida"
+        const [result] = await poolBancoDados.execute(
+            'INSERT INTO TB_Registros (fkSensor, ativo) VALUES (1, ?)',
+            [sensorDigital]
+        );
+        inserido = true;
+        idRegistroAtual = result.insertId;
+        console.log("Entrada registrada.");
+
+    }
+
+    if (sensorDigital === 0 && inserido == true) {
+        // este update irá atualizar a tabela "registro", registrando a saída da pessoa no provador.
+        await poolBancoDados.execute(
+            'UPDATE TB_Registros SET data_saida = (NOW()) WHERE idRegistro = ?',
+            [idRegistroAtual]
+        );
+        inserido = false;
+        idRegistroAtual = null;
+        console.log("Saída registrada");
+    }
+});
+
+// evento para lidar com erros na comunicação serial
+arduino.on('error', (mensagem) => {
+    console.error(`Erro no arduino (Mensagem: ${mensagem}`)
+});
+
 
 // função para criar e configurar o servidor web
 const servidor = (
